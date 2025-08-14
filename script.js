@@ -7,15 +7,15 @@
   const iconList = iconAttr.split(',').map(s => s.trim()).filter(Boolean);
   const pickIcon = () => iconList[Math.floor(Math.random() * iconList.length)];
   const iconCount = 12;
-  const minTiltDeg = -30;
-  const maxTiltDeg = 30;
-  const minRadiusVmin = 10;
-  const radiusStepVmin = 6;
-  const radiusJitterVmin = 1.75;
-  const minSizeVmin = 3.2;
-  const maxSizeVmin = 7.5;
-  const minSpeed = 0.4; // deg/sec
-  const maxSpeed = 18;  // deg/sec
+  const baseTiltDeg = -12; // average orbit tilt toward viewer
+  const tiltJitterDeg = 8; // random offset around base tilt
+  const minRadiusVmin = 9;
+  const radiusStepVmin = 5.2;
+  const radiusJitterVmin = 1.4;
+  const minSizeVmin = 3.0;
+  const maxSizeVmin = 7.0;
+  const minSpeed = 6;   // deg/sec
+  const maxSpeed = 22;  // deg/sec
 
   // Convert vmin to pixels for stable translate3d positioning
   function vminToPx(v) {
@@ -31,7 +31,7 @@
     const orbit = document.createElement('div');
     orbit.className = 'orbit';
 
-    const tiltX = randBetween(minTiltDeg, maxTiltDeg) * Math.PI / 180;
+    const tiltX = (baseTiltDeg + randBetween(-tiltJitterDeg, tiltJitterDeg)) * Math.PI / 180;
     const tiltY = 0;
 
     const start = document.createElement('div');
@@ -49,8 +49,8 @@
     const sizeVmin = randBetween(minSizeVmin, maxSizeVmin);
     img.style.setProperty('--size', `${sizeVmin}vmin`);
 
-    const hue = Math.floor(randBetween(0, 360));
-    img.style.filter = `hue-rotate(${hue}deg) drop-shadow(0 0.6vmin 1.2vmin rgba(0,0,0,0.45))`;
+    // Initial filter; depth blur will be applied per-frame
+    img.style.filter = `drop-shadow(0 0.6vmin 1.2vmin rgba(0,0,0,0.45))`;
 
     revolve.appendChild(img);
     start.appendChild(revolve);
@@ -104,16 +104,21 @@
       const py = cy + y1;
       const pz = z1;
 
-      item.element.style.width = `${item.sizeVmin}vmin`;
-      item.element.style.height = `${item.sizeVmin}vmin`;
+      // Depth-based size scaling for projection feel
+      const scale = 1 + (pz / (500 * vminUnit / 100));
+      const clampedScale = clamp(scale, 0.75, 1.35);
+      item.element.style.width = `calc(${item.sizeVmin}vmin * ${clampedScale})`;
+      item.element.style.height = `calc(${item.sizeVmin}vmin * ${clampedScale})`;
       item.element.style.transform = `translate3d(${px}px, ${py}px, ${pz}px) translate(-50%, -50%)`;
 
       // Depth shading: dim when far (negative z), full bright when near (positive z)
       const maxDepth = 400 * vminUnit / 100;
-      const depthFactor = clamp(1 - (-pz / maxDepth), 0.55, 1);
+      const depthFactor = clamp(1 - (-pz / maxDepth), 0.6, 1);
       item.element.style.opacity = String(depthFactor);
 
-      // Depth-based blur or size could be added here if desired
+      // Slight blur when far away (optional; keep minimal for sharpness)
+      const blur = clamp((-pz) / (700 * vminUnit / 100), 0, 0.8);
+      item.element.style.filter = `hue-rotate(0deg) drop-shadow(0 0.6vmin 1.2vmin rgba(0,0,0,0.45)) blur(${blur}px)`;
     }
     requestAnimationFrame(frame);
   }
