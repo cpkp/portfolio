@@ -14,8 +14,11 @@
   const radiusJitterVmin = 1.4;
   const minSizeVmin = 3.0;
   const maxSizeVmin = 7.0;
-  const minSpeed = 6;   // deg/sec
-  const maxSpeed = 22;  // deg/sec
+  // Speed bands: inner rings faster, outer rings slower (deg/sec)
+  const innerSpeedMin = 16;
+  const innerSpeedMax = 28;
+  const outerSpeedMin = 4;
+  const outerSpeedMax = 10;
 
   // Convert vmin to pixels for stable translate3d positioning
   function vminToPx(v) {
@@ -25,9 +28,14 @@
     return v * unit;
   }
 
+  // Dynamic icon count based on viewport size
+  const viewportMin = Math.min(window.innerWidth, window.innerHeight);
+  const dynamicCount = viewportMin >= 1100 ? 16 : viewportMin >= 800 ? 14 : viewportMin >= 600 ? 12 : 10;
+  const count = dynamicCount;
+
   const items = [];
 
-  for (let i = 0; i < iconCount; i++) {
+  for (let i = 0; i < count; i++) {
     const orbit = document.createElement('div');
     orbit.className = 'orbit';
 
@@ -57,7 +65,11 @@
     orbit.appendChild(start);
     systemEl.appendChild(orbit);
 
-    const speedDegPerSec = randBetween(minSpeed, maxSpeed) * (Math.random() < 0.5 ? 1 : -1);
+    // Speed band per ring index: inner -> outer maps to fast -> slow
+    const t = count > 1 ? i / (count - 1) : 0; // 0 inner, 1 outer
+    const bandMin = lerp(innerSpeedMin, outerSpeedMin, t);
+    const bandMax = lerp(innerSpeedMax, outerSpeedMax, t);
+    const speedDegPerSec = randBetween(bandMin, bandMax) * (Math.random() < 0.5 ? 1 : -1);
     const angleDeg = randBetween(0, 360);
 
     items.push({
@@ -141,6 +153,14 @@
     });
   }
 
+  // Recompute icon count on resize (simple reload to rebuild orbits)
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => location.reload(), 250);
+  });
+
   function randBetween(min, max) { return Math.random() * (max - min) + min; }
   function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
 })();
