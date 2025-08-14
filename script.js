@@ -74,6 +74,7 @@
 
     items.push({
       element: img,
+      wrapper: orbit,
       baseAngleDeg: angleDeg,
       speedDegPerSec,
       radiusVmin,
@@ -153,11 +154,59 @@
     });
   }
 
-  // Recompute icon count on resize (simple reload to rebuild orbits)
+  // Smoothly adapt icon count on resize without reload
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => location.reload(), 250);
+    resizeTimer = setTimeout(() => {
+      const viewportMinNew = Math.min(window.innerWidth, window.innerHeight);
+      const targetCount = viewportMinNew >= 1100 ? 16 : viewportMinNew >= 800 ? 14 : viewportMinNew >= 600 ? 12 : 10;
+      const diff = targetCount - items.length;
+      if (diff === 0) return;
+
+      if (diff > 0) {
+        // Add orbits
+        for (let k = 0; k < diff; k++) {
+          const i = items.length; // next ring index
+          const orbit = document.createElement('div');
+          orbit.className = 'orbit';
+          const tiltX = (baseTiltDeg + randBetween(-tiltJitterDeg, tiltJitterDeg)) * Math.PI / 180;
+          const start = document.createElement('div');
+          start.className = 'start';
+          const revolve = document.createElement('div');
+          revolve.className = 'revolve';
+          const img = document.createElement('img');
+          img.className = 'icon';
+          img.src = pickIcon();
+          img.alt = 'Orbiting icon';
+
+          const radiusVmin = minRadiusVmin + i * radiusStepVmin + randBetween(-radiusJitterVmin, radiusJitterVmin);
+          const sizeVmin = randBetween(minSizeVmin, maxSizeVmin);
+          img.style.setProperty('--size', `${sizeVmin}vmin`);
+
+          revolve.appendChild(img);
+          start.appendChild(revolve);
+          orbit.appendChild(start);
+          systemEl.appendChild(orbit);
+
+          const t = targetCount > 1 ? i / (targetCount - 1) : 0;
+          const bandMin = lerp(innerSpeedMin, outerSpeedMin, t);
+          const bandMax = lerp(innerSpeedMax, outerSpeedMax, t);
+          const speedDegPerSec = randBetween(bandMin, bandMax) * (Math.random() < 0.5 ? 1 : -1);
+          const angleDeg = randBetween(0, 360);
+
+          items.push({ element: img, wrapper: orbit, baseAngleDeg: angleDeg, speedDegPerSec, radiusVmin, sizeVmin, tiltX, tiltY: 0 });
+        }
+      } else {
+        // Remove outermost orbits
+        for (let k = 0; k < -diff; k++) {
+          const removed = items.pop();
+          if (removed && removed.wrapper && removed.wrapper.parentNode) {
+            removed.wrapper.parentNode.removeChild(removed.wrapper);
+          }
+        }
+      }
+    }, 200);
   });
 
   function randBetween(min, max) { return Math.random() * (max - min) + min; }
