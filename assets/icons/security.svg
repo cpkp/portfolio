@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Security icon">
+  <g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 8 L48 14 V30 C48 44 40 52 32 56 C24 52 16 44 16 30 V14 Z"/>
+    <path d="M24 30 C24 36 28 42 32 44 C36 42 40 36 40 30"/>
+  </g>
+</svg>
