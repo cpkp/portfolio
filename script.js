@@ -32,7 +32,7 @@
     orbit.className = 'orbit';
 
     const tiltX = randBetween(minTiltDeg, maxTiltDeg) * Math.PI / 180;
-    const tiltY = randBetween(minTiltDeg, maxTiltDeg) * Math.PI / 180;
+    const tiltY = 0;
 
     const start = document.createElement('div');
     start.className = 'start';
@@ -89,37 +89,31 @@
 
       const rPx = item.radiusVmin * vminUnit;
 
-      // Base orbit in XY plane
+      // Base orbit in XZ plane (around Y-axis)
       let x = Math.cos(a) * rPx;
-      let y = Math.sin(a) * rPx;
-      let z = 0;
+      let z = Math.sin(a) * rPx;
+      let y = 0;
 
-      // Apply tilt rotations: rotate around X then Y
-      // Rotate around X by tiltX
-      let y1 = y * Math.cos(item.tiltX) - z * Math.sin(item.tiltX);
-      let z1 = y * Math.sin(item.tiltX) + z * Math.cos(item.tiltX);
-      let x1 = x;
-      // Rotate around Y by tiltY
-      let x2 = x1 * Math.cos(item.tiltY) + z1 * Math.sin(item.tiltY);
-      let z2 = -x1 * Math.sin(item.tiltY) + z1 * Math.cos(item.tiltY);
-      let y2 = y1;
+      // Tilt plane around X by tiltX
+      let y1 = -z * Math.sin(item.tiltX);
+      let z1 =  z * Math.cos(item.tiltX);
+      let x1 =  x;
 
       // Map to screen center, use translate3d for proper 3D stacking
-      const px = cx + x2;
-      const py = cy + y2;
-      const pz = z2; // depth in px
+      const px = cx + x1;
+      const py = cy + y1;
+      const pz = z1;
 
-      const sizePx = item.sizeVmin * vminUnit;
       item.element.style.width = `${item.sizeVmin}vmin`;
       item.element.style.height = `${item.sizeVmin}vmin`;
       item.element.style.transform = `translate3d(${px}px, ${py}px, ${pz}px) translate(-50%, -50%)`;
 
-      // Depth shading and stacking: darker when behind (positive z away from viewer due to tilt)
-      const maxDepth = 400 * vminUnit / 100; // scale depth effect
-      const depthFactor = clamp(1 - (pz / maxDepth), 0.55, 1);
+      // Depth shading: dim when far (negative z), full bright when near (positive z)
+      const maxDepth = 400 * vminUnit / 100;
+      const depthFactor = clamp(1 - (-pz / maxDepth), 0.55, 1);
       item.element.style.opacity = String(depthFactor);
 
-      // Ensure stacking by z: use translateZ; no need to modify z-index due to preserve-3d
+      // Depth-based blur or size could be added here if desired
     }
     requestAnimationFrame(frame);
   }
