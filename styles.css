@@ -50,6 +50,7 @@ body::after {
   width: min(92vmin, 820px);
   height: min(92vmin, 820px);
   transform-style: preserve-3d;
+  isolation: isolate;
   transform:
     rotateX(var(--base-tilt-x)) rotateY(var(--base-tilt-y))
     rotateX(var(--mouse-tilt-y)) rotateY(var(--mouse-tilt-x));
@@ -63,7 +64,6 @@ body::after {
   height: auto;
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 6px 24px rgba(0,0,0,0.55));
-  z-index: 2;
 }
 
 /* Orbit system (no visible paths) */
@@ -75,7 +75,7 @@ body::after {
 
 .orbit { transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
 .start { transform: rotateZ(var(--start-rot)); }
-.revolve { animation: spin var(--duration) linear infinite; }
+.revolve { /* animation moved to JS for real 3D */ }
 
 .icon {
   position: absolute;
